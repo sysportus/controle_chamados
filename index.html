@@ -382,40 +382,8 @@ var filtSt    = 'Todos';
 var secAtual  = 'dash';
 
 // ── Defaults ───────────────────────────────────────────────────────────
-var CLI_DEF = [
-  {id:1,nome:"Godoy Advogados",seg:"Jurídico",eq:35,mens:2145,cont:"",tel:"",obs:""},
-  {id:2,nome:"CR Belloni",seg:"Jurídico",eq:21,mens:810,cont:"",tel:"",obs:""},
-  {id:3,nome:"Fratini Sociedade de Advogados",seg:"Jurídico",eq:15,mens:675,cont:"",tel:"",obs:"Menor demanda"},
-  {id:4,nome:"JVR Alarmes",seg:"Jurídico",eq:15,mens:860,cont:"",tel:"",obs:""},
-  {id:5,nome:"Ipê Palace Hotel",seg:"Hotelaria",eq:10,mens:838,cont:"",tel:"",obs:""},
-  {id:6,nome:"Grion Seguros",seg:"Seguros",eq:14,mens:810,cont:"",tel:"",obs:""},
-  {id:7,nome:"Digiface",seg:"Saúde",eq:1,mens:209,cont:"",tel:"",obs:""},
-  {id:8,nome:"4tro Urbanismo",seg:"Outros",eq:13,mens:0,cont:"",tel:"",obs:""},
-  {id:9,nome:"Cliente Avulso",seg:"Outros",eq:0,mens:0,cont:"",tel:"",obs:""}
-];
-
-var CH_DEF = [
-  {id:1,cliente:"Fratini Sociedade de Advogados",cont:"Andreza",eq:"Nobreak Recepção",desc:"Nobreak apitando depois de uma queda de energia.",tipo:"Dúvida/Orientação",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"12:31",hini:"12:31",hfech:"12:34",data:"2026-04-27",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:2,cliente:"Godoy Advogados",cont:"Adalberto",eq:"Desktop",desc:"Acompanhamento Audiência de Instrução",tipo:"Dúvida/Orientação",prio:"Alto",canal:"Telefone",status:"Resolvido",hab:"09:00",hini:"09:00",hfech:"11:00",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:3,cliente:"Grion Seguros",cont:"Francieli",eq:"Desktop Financeiro",desc:"Mapeamento na rede lento",tipo:"Corretivo",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"09:07",hini:"09:07",hfech:"09:59",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:4,cliente:"Godoy Advogados",cont:"Claudia",eq:"Desktop Sala de Reunião",desc:"Acompanhamento Audiência de Instrução",tipo:"Dúvida/Orientação",prio:"Alto",canal:"WhatsApp",status:"Resolvido",hab:"12:31",hini:"12:31",hfech:"14:22",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:5,cliente:"Godoy Advogados",cont:"júnior",eq:"Desktop Sala de Reunião II",desc:"Acompanhamento Audiência de Instrução",tipo:"Dúvida/Orientação",prio:"Alto",canal:"WhatsApp",status:"Resolvido",hab:"12:33",hini:"12:33",hfech:"16:10",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:6,cliente:"JVR Alarmes",cont:"Breda",eq:"Desktop",desc:"Orientação em relação a e-mail recebido de tentativa de golpe.",tipo:"Dúvida/Orientação",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"13:14",hini:"13:14",hfech:"13:31",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:7,cliente:"Godoy Advogados",cont:"Pedro",eq:"Desktop",desc:"Implantação de assinatura no e-mail",tipo:"Instalação",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"12:25",hini:"13:00",hfech:"13:31",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:8,cliente:"CR Belloni",cont:"Bianca",eq:"DVR",desc:"DVR apitando",tipo:"Dúvida/Orientação",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"17:09",hini:"17:09",hfech:"17:33",data:"2026-04-28",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:9,cliente:"Godoy Advogados",cont:"Pedro",eq:"Desktop",desc:"Demorando para ligar",tipo:"Dúvida/Orientação",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"08:17",hini:"08:17",hfech:"08:31",data:"2026-04-29",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:10,cliente:"Cliente Avulso",cont:"Tia Celia",eq:"Iphone",desc:"Backup e reset de aparelho.",tipo:"Corretivo",prio:"Alto",canal:"WhatsApp",status:"Em andamento",hab:"16:28",hini:"13:15",hfech:"",data:"2026-04-28",cobrtipo:"manual",valor:150,cobrobs:"",servico:""},
-  {id:11,cliente:"Fratini Sociedade de Advogados",cont:"Leticia",eq:"Sala de reunião",desc:"Acompanhamento Audiência de Instrução Dr. Marcos",tipo:"Dúvida/Orientação",prio:"Alto",canal:"WhatsApp",status:"Resolvido",hab:"12:14",hini:"13:00",hfech:"14:00",data:"2026-04-29",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:12,cliente:"Godoy Advogados",cont:"Claudia",eq:"Sala de reunião",desc:"Criando link de reunião",tipo:"Dúvida/Orientação",prio:"Alto",canal:"WhatsApp",status:"Resolvido",hab:"09:21",hini:"15:30",hfech:"15:45",data:"2026-04-29",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:13,cliente:"Ipê Palace Hotel",cont:"André",eq:"Rede",desc:"Criar vouches de 1 dia",tipo:"Outros",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"14:54",hini:"14:54",hfech:"15:15",data:"2026-04-29",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:14,cliente:"Cliente Avulso",cont:"Thais",eq:"Notebook Acer",desc:"Formatação, backup e instalação dos programas",tipo:"Instalação",prio:"Normal",canal:"Presencial",status:"Resolvido",hab:"16:47",hini:"20:00",hfech:"22:00",data:"2026-04-26",cobrtipo:"fixo",valor:150,cobrobs:"",servico:"Formatação e reinstalação"},
-  {id:15,cliente:"Cliente Avulso",cont:"Luciano Frizão",eq:"Notebook Dell",desc:"Instalação de programas notebook novo",tipo:"Instalação",prio:"Normal",canal:"WhatsApp",status:"Resolvido",hab:"09:23",hini:"20:00",hfech:"20:45",data:"2026-04-26",cobrtipo:"manual",valor:100,cobrobs:"",servico:""},
-  {id:16,cliente:"Fratini Sociedade de Advogados",cont:"Gleyce",eq:"Notebook Acer",desc:"sem conexao via cabo de rede",tipo:"Corretivo",prio:"Normal",canal:"Presencial",status:"Em andamento",hab:"09:45",hini:"10:05",hfech:"10:45",data:"2026-04-30",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:17,cliente:"Fratini Sociedade de Advogados",cont:"Andreza",eq:"Desktop",desc:"Não abrindo pastas",tipo:"Dúvida/Orientação",prio:"Normal",canal:"WhatsApp",status:"Em andamento",hab:"09:32",hini:"09:54",hfech:"10:00",data:"2026-04-30",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:18,cliente:"Godoy Advogados",cont:"Adalberto",eq:"Desktop Guias",desc:"Instalar caixa de som",tipo:"Instalação",prio:"Alto",canal:"WhatsApp",status:"Resolvido",hab:"13:31",hini:"14:00",hfech:"14:30",data:"2026-04-30",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""},
-  {id:19,cliente:"Godoy Advogados",cont:"Rayane",eq:"Desktop",desc:"Troca de teclado",tipo:"Instalação",prio:"Normal",canal:"Presencial",status:"Resolvido",hab:"14:15",hini:"14:15",hfech:"14:30",data:"2026-04-30",cobrtipo:"mensalidade",valor:null,cobrobs:"",servico:""}
-];
-
+var CLI_DEF = [];
+var CH_DEF  = [];
 var TB_DEF = [
   {id:1,nome:"Hora técnica",tipo:"hora",valor:100},
   {id:2,nome:"Formatação e reinstalação",tipo:"fixo",valor:150},
