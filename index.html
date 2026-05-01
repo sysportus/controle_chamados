@@ -121,7 +121,11 @@ textarea.fc { resize: none; min-height: 76px; }
   <div id="hdr">
     <div id="hdr-top">
       <h1>Suporte <span>TI</span></h1>
-      <select class="msel" id="mf" onchange="render()"></select>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="sync-ind" style="font-size:10px;color:var(--muted);font-family:var(--fm)">⏳</span>
+        <select class="msel" id="mf" onchange="render()"></select>
+        <button onclick="fazerLogout()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 4px" title="Sair">⏏️</button>
+      </div>
     </div>
     <div id="hdr-sub">—</div>
   </div>
@@ -362,7 +366,89 @@ textarea.fc { resize: none; min-height: 76px; }
   </div>
 </div>
 
+<!-- TELA DE LOGIN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:360px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:40px;margin-bottom:12px">🖥️</div>
+      <h1 style="font-size:24px;font-weight:800;color:var(--text)">Suporte <span style="color:var(--accent)">TI</span></h1>
+      <p style="font-size:13px;color:var(--muted);margin-top:6px">Acesso restrito</p>
+    </div>
+    <div class="fg"><label class="fl">E-mail</label><input class="fc" id="l-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
+    <div class="fg"><label class="fl">Senha</label><input class="fc" id="l-senha" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div id="l-erro" style="font-size:12px;color:var(--red);margin-bottom:12px;display:none;text-align:center"></div>
+    <button class="btn-p" id="l-btn" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
+
 <div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAuYfhxaFf1V9LNZeOTVsmMiwThdXPw1Ak",
+  authDomain: "controle-chamados-cbf64.firebaseapp.com",
+  projectId: "controle-chamados-cbf64",
+  storageBucket: "controle-chamados-cbf64.firebasestorage.app",
+  messagingSenderId: "173116624073",
+  appId: "1:173116624073:web:ba69b6869024b55ab1d118"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+const REF  = doc(db, 'suporte', 'dados');
+
+// ── Auth ──────────────────────────────────────────────────────────────
+window._fbLogin = async function(email, senha) {
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+    return null;
+  } catch(e) {
+    var msgs = {
+      'auth/invalid-credential':    'E-mail ou senha incorretos.',
+      'auth/user-not-found':        'Usuário não encontrado.',
+      'auth/wrong-password':        'Senha incorreta.',
+      'auth/too-many-requests':     'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/network-request-failed':'Sem conexão com a internet.'
+    };
+    return msgs[e.code] || 'Erro ao fazer login. Tente novamente.';
+  }
+};
+
+window._fbLogout = async function() {
+  await signOut(auth);
+};
+
+window._fbAuthWatch = function(onChange) {
+  return onAuthStateChanged(auth, onChange);
+};
+
+// ── Firestore ─────────────────────────────────────────────────────────
+window._fbSave = async function(dados) {
+  try { await setDoc(REF, dados); }
+  catch(e) { console.error('Firebase save error:', e); }
+};
+
+window._fbLoad = async function() {
+  try { var snap = await getDoc(REF); return snap.exists() ? snap.data() : null; }
+  catch(e) { console.error('Firebase load error:', e); return null; }
+};
+
+window._fbListen = function(callback) {
+  return onSnapshot(REF, function(snap) {
+    if (snap.exists()) callback(snap.data());
+  });
+};
+
+// Sinaliza que Firebase está pronto
+window._fbReady = true;
+document.dispatchEvent(new Event('fbReady'));
+</script>
 
 <script>
 // ── Chaves storage ─────────────────────────────────────────────────────
@@ -395,17 +481,69 @@ var TB_DEF = [
   {id:8,nome:"Visita técnica",tipo:"fixo",valor:80}
 ];
 
-// ── Storage ────────────────────────────────────────────────────────────
-function load() {
-  try { var sc2 = JSON.parse(localStorage.getItem(SK_CH)); chamados = (sc2 && sc2.length) ? sc2 : CH_DEF; } catch(e) { chamados = CH_DEF; }
-  try { var sc = JSON.parse(localStorage.getItem(SK_CL)); clientes = (sc && sc.length) ? sc : CLI_DEF; } catch(e) { clientes = CLI_DEF; }
-  try { var st = JSON.parse(localStorage.getItem(SK_TB)); tabela = (st && st.length) ? st : TB_DEF; } catch(e) { tabela = TB_DEF; }
-}
+// ── Storage (Firebase + localStorage fallback) ─────────────────────────
+var _fbListener = null;
 
 function saveAll() {
+  // Salva local imediatamente
   localStorage.setItem(SK_CH, JSON.stringify(chamados));
   localStorage.setItem(SK_CL, JSON.stringify(clientes));
   localStorage.setItem(SK_TB, JSON.stringify(tabela));
+  // Salva no Firebase em segundo plano
+  if (window._fbSave) {
+    window._fbSave({ chamados: chamados, clientes: clientes, tabela: tabela });
+  }
+}
+
+function load() {
+  // Carrega do localStorage enquanto aguarda Firebase
+  try { var sc2 = JSON.parse(localStorage.getItem(SK_CH)); chamados = (sc2 && sc2.length) ? sc2 : CH_DEF; } catch(e) { chamados = CH_DEF; }
+  try { var sc  = JSON.parse(localStorage.getItem(SK_CL)); clientes = (sc  && sc.length)  ? sc  : CLI_DEF; } catch(e) { clientes = CLI_DEF; }
+  try { var st  = JSON.parse(localStorage.getItem(SK_TB)); tabela   = (st  && st.length)  ? st  : TB_DEF;  } catch(e) { tabela   = TB_DEF; }
+}
+
+function iniciarFirebase() {
+  if (!window._fbLoad) return;
+
+  // Carrega dados do Firebase na abertura
+  window._fbLoad().then(function(dados) {
+    if (!dados) {
+      document.getElementById('sync-ind').textContent = '☁️ ok';
+      document.getElementById('sync-ind').style.color = 'var(--green)';
+      return;
+    }
+    if (dados.chamados && dados.chamados.length) chamados = dados.chamados;
+    if (dados.clientes && dados.clientes.length) clientes = dados.clientes;
+    if (dados.tabela   && dados.tabela.length)   tabela   = dados.tabela;
+    localStorage.setItem(SK_CH, JSON.stringify(chamados));
+    localStorage.setItem(SK_CL, JSON.stringify(clientes));
+    localStorage.setItem(SK_TB, JSON.stringify(tabela));
+    document.getElementById('sync-ind').textContent = '☁️ ok';
+    document.getElementById('sync-ind').style.color = 'var(--green)';
+    render();
+    toast('☁️ Dados sincronizados!');
+  });
+
+  // Listener em tempo real — atualiza se outro dispositivo salvar
+  if (_fbListener) _fbListener();
+  _fbListener = window._fbListen(function(dados) {
+    if (!dados) return;
+    var chStr = JSON.stringify(dados.chamados);
+    var clStr = JSON.stringify(dados.clientes);
+    var tbStr = JSON.stringify(dados.tabela);
+    // Só atualiza se os dados mudaram (evita loop)
+    if (chStr !== JSON.stringify(chamados) ||
+        clStr !== JSON.stringify(clientes) ||
+        tbStr !== JSON.stringify(tabela)) {
+      chamados = dados.chamados || chamados;
+      clientes = dados.clientes || clientes;
+      tabela   = dados.tabela   || tabela;
+      localStorage.setItem(SK_CH, JSON.stringify(chamados));
+      localStorage.setItem(SK_CL, JSON.stringify(clientes));
+      localStorage.setItem(SK_TB, JSON.stringify(tabela));
+      render();
+    }
+  });
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -1104,9 +1242,83 @@ document.querySelectorAll('.ov').forEach(function(o){
   o.addEventListener('click', function(e){ if(e.target===o) o.classList.remove('open'); });
 });
 
-// ── Init ───────────────────────────────────────────────────────────────
+// ── Login / Logout ─────────────────────────────────────────────────────
+function fazerLogin() {
+  var email = document.getElementById('l-email').value.trim();
+  var senha = document.getElementById('l-senha').value;
+  var btn   = document.getElementById('l-btn');
+  var erro  = document.getElementById('l-erro');
+  if (!email || !senha) { mostrarErro('Preencha e-mail e senha.'); return; }
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+  erro.style.display = 'none';
+  if (window._fbLogin) {
+    window._fbLogin(email, senha).then(function(err) {
+      if (err) {
+        mostrarErro(err);
+        btn.textContent = 'Entrar';
+        btn.disabled = false;
+      }
+      // Se ok, onAuthStateChanged cuida do resto
+    });
+  }
+}
+
+function mostrarErro(msg) {
+  var erro = document.getElementById('l-erro');
+  erro.textContent = msg;
+  erro.style.display = 'block';
+}
+
+function fazerLogout() {
+  if (!confirm('Deseja sair?')) return;
+  if (window._fbLogout) window._fbLogout();
+}
+
+// Enter no campo de senha faz login
+document.addEventListener('DOMContentLoaded', function() {
+  var senhaInput = document.getElementById('l-senha');
+  if (senhaInput) {
+    senhaInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') fazerLogin();
+    });
+  }
+});
+
+function mostrarApp() {
+  document.getElementById('login-screen').style.display = 'none';
+}
+
+function mostrarLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('l-btn').textContent = 'Entrar';
+  document.getElementById('l-btn').disabled = false;
+  document.getElementById('l-senha').value = '';
+  document.getElementById('l-erro').style.display = 'none';
+}
+
+
 load();
 render();
+
+function iniciarComAuth() {
+  if (!window._fbAuthWatch) return;
+  window._fbAuthWatch(function(user) {
+    if (user) {
+      mostrarApp();
+      iniciarFirebase();
+    } else {
+      mostrarLogin();
+      if (_fbListener) { _fbListener(); _fbListener = null; }
+    }
+  });
+}
+
+if (window._fbReady) {
+  iniciarComAuth();
+} else {
+  document.addEventListener('fbReady', iniciarComAuth);
+}
 </script>
 </body>
 </html>
