@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
-<title>Sysportus - Controle de Chamados</title>
+<title>Suporte TI</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -120,7 +120,7 @@ textarea.fc { resize: none; min-height: 76px; }
 <div id="app">
   <div id="hdr">
     <div id="hdr-top">
-      <h1>Sysportus <span>Controle de Chamados</span></h1>
+      <h1>Suporte <span>TI</span></h1>
       <div style="display:flex;align-items:center;gap:8px">
         <span id="sync-ind" style="font-size:10px;color:var(--muted);font-family:var(--fm)">⏳</span>
         <select class="msel" id="mf" onchange="render()"></select>
@@ -371,7 +371,7 @@ textarea.fc { resize: none; min-height: 76px; }
   <div style="width:100%;max-width:360px">
     <div style="text-align:center;margin-bottom:32px">
       <div style="font-size:40px;margin-bottom:12px">🖥️</div>
-      <h1 style="font-size:24px;font-weight:800;color:var(--text)">Sysportus <span style="color:var(--accent)">Controle de Chamados</span></h1>
+      <h1 style="font-size:24px;font-weight:800;color:var(--text)">Suporte <span style="color:var(--accent)">TI</span></h1>
       <p style="font-size:13px;color:var(--muted);margin-top:6px">Acesso restrito</p>
     </div>
     <div class="fg"><label class="fl">E-mail</label><input class="fc" id="l-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
@@ -666,42 +666,50 @@ function rDash(lista) {
                  .reduce(function(a,c){ return a+Number(c.valor||0); }, 0);
   document.getElementById('d-fat').textContent = 'R$ ' + fat.toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  function mkBar(elId, data, color, fmt) {
-    var vals = Object.keys(data).map(function(k){ return data[k]; });
-    var max = Math.max.apply(null, vals.concat([1]));
-    document.getElementById(elId).innerHTML = Object.keys(data).map(function(k){
-      var v = data[k];
-      var pct = v/max*100;
-      var lbl = fmt ? fmt(v) : v;
-      return '<div class="brow"><span class="blbl">' + esc(k) + '</span><div class="btrk"><div class="bfil" style="width:' + pct + '%;background:' + color + '"></div></div><span class="bval" style="color:' + color + ';width:auto;min-width:28px">' + lbl + '</span></div>';
+  // Gera barras ordenadas por valor desc, ocultando zeros
+  function mkBar(elId, pares, color, fmt) {
+    var comValor = pares.filter(function(p){ return p[1] > 0; });
+    comValor.sort(function(a,b){ return b[1]-a[1]; });
+    if (!comValor.length) {
+      document.getElementById(elId).innerHTML = '<div style="font-size:12px;color:var(--muted)">Nenhum dado no período</div>';
+      return;
+    }
+    var max = comValor[0][1];
+    document.getElementById(elId).innerHTML = comValor.map(function(p){
+      var lbl = fmt ? fmt(p[1]) : p[1];
+      return '<div class="brow">' +
+        '<span class="blbl">' + esc(p[0]) + '</span>' +
+        '<div class="btrk"><div class="bfil" style="width:' + (p[1]/max*100) + '%;background:' + color + '"></div></div>' +
+        '<span class="bval" style="color:' + color + ';width:auto;min-width:36px;text-align:right">' + lbl + '</span>' +
+        '</div>';
     }).join('');
   }
 
+  // Acumula por cliente
   var cc = {}, ch = {}, cf = {};
   clientes.forEach(function(c){ cc[c.nome]=0; ch[c.nome]=0; cf[c.nome]=0; });
+  // Inclui clientes avulsos que podem não estar na lista de clientes
   lista.forEach(function(c){
-    if (cc[c.cliente] !== undefined) {
-      cc[c.cliente]++;
-      var t = tAtend(c); if(t) ch[c.cliente] += t;
-      if (c.cobrtipo && c.cobrtipo!=='mensalidade' && c.valor) cf[c.cliente] += Number(c.valor||0);
-    }
+    if (cc[c.cliente] === undefined) { cc[c.cliente]=0; ch[c.cliente]=0; cf[c.cliente]=0; }
+    cc[c.cliente]++;
+    var t = tAtend(c); if(t) ch[c.cliente] += t;
+    if (c.cobrtipo && c.cobrtipo!=='mensalidade' && c.valor) cf[c.cliente] += Number(c.valor||0);
   });
 
-  mkBar('ch-cli', cc, 'var(--accent)', null);
-  mkBar('ch-h',   ch, 'var(--accent2)', function(v){ return v.toFixed(1).replace('.0',''); });
+  mkBar('ch-cli', Object.keys(cc).map(function(k){ return [k, cc[k]]; }), 'var(--accent)', null);
+  mkBar('ch-h',   Object.keys(ch).map(function(k){ return [k, ch[k]]; }), 'var(--accent2)', function(v){ return v.toFixed(1).replace('.0','')+'h'; });
+  mkBar('ch-fat', Object.keys(cf).map(function(k){ return [k, cf[k]]; }), 'var(--green)',   function(v){ return 'R$'+Math.round(v); });
 
-  var hasFat = Object.keys(cf).some(function(k){ return cf[k]>0; });
-  if (hasFat) {
-    mkBar('ch-fat', cf, 'var(--green)', function(v){ return 'R$'+Math.round(v); });
-  } else {
+  if (!Object.keys(cf).some(function(k){ return cf[k]>0; })) {
     document.getElementById('ch-fat').innerHTML = '<div style="font-size:12px;color:var(--muted)">Nenhum lançamento avulso no período</div>';
   }
 
+  // Acumula por tipo
   var tipos = ['Corretivo','Preventivo','Dúvida/Orientação','Instalação','Outros'];
   var tc = {};
   tipos.forEach(function(t){ tc[t]=0; });
   lista.forEach(function(c){ if(tc[c.tipo]!==undefined) tc[c.tipo]++; });
-  mkBar('ch-tp', tc, 'var(--green)', null);
+  mkBar('ch-tp', Object.keys(tc).map(function(k){ return [k, tc[k]]; }), 'var(--green)', null);
 }
 
 // ── Chamados ───────────────────────────────────────────────────────────
@@ -811,7 +819,7 @@ function expTxt() {
                .reduce(function(a,c){ return a+Number(c.valor||0); }, 0);
   var sep = '----------------------------------------';
   var linhas = [
-    'RELATÓRIO DE CHAMADOS — SYSPORUS - CONTROLE DE CHAMADOS', sep,
+    'RELATÓRIO DE CHAMADOS — SUPORTE TI', sep,
     'Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
     'Total: ' + res.length + ' · Resolvidos: ' + res.filter(function(c){ return c.status==='Resolvido'; }).length + ' · Horas: ' + th.toFixed(1) + 'h · Faturamento avulso: ' + fR(fat),
     sep, ''
@@ -865,7 +873,7 @@ function expPDF() {
     'table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:7px 8px;text-align:left;font-size:10px;text-transform:uppercase}' +
     'td{padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:10px;vertical-align:top}' +
     'tr:nth-child(even) td{background:#f8fafc}@media print{body{padding:0}}</style></head><body>' +
-    '<h1>Relatório de Chamados — Sysportus - Controle de Chamados</h1>' +
+    '<h1>Relatório de Chamados — Suporte TI</h1>' +
     '<div class="sub">Gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + '</div>' +
     '<div class="sum">' +
     '<div><div class="sv">'+res.length+'</div><div class="sl">Chamados</div></div>' +
